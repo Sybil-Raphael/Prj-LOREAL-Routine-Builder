@@ -100,11 +100,55 @@ function showProductModal(product) {
   };
 }
 
+// Store all loaded products for filtering
+let allProducts = [];
+
+// How many products to show initially
+const INITIAL_PRODUCT_COUNT = 6;
+let productsToShow = INITIAL_PRODUCT_COUNT;
+
+// Helper: Filter products by search and category
+function getFilteredProducts() {
+  const searchValue = document
+    .getElementById("productSearch")
+    .value.trim()
+    .toLowerCase();
+  const selectedCategory = categoryFilter.value;
+  return allProducts.filter((product) => {
+    // Match search by name or description (keyword)
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchValue) ||
+      product.description.toLowerCase().includes(searchValue);
+    // Match category if selected
+    const matchesCategory = selectedCategory
+      ? product.category === selectedCategory
+      : true;
+    return matchesSearch && matchesCategory;
+  });
+}
+
+// Update product grid based on current filters and show/hide logic
+function updateProductGrid() {
+  const filtered = getFilteredProducts();
+  displayProducts(filtered.slice(0, productsToShow));
+  // Show or hide the "Show More" button
+  const showMoreBtn = document.getElementById("showMoreBtn");
+  if (showMoreBtn) {
+    if (filtered.length > productsToShow) {
+      showMoreBtn.style.display = "inline-block";
+    } else {
+      showMoreBtn.style.display = "none";
+    }
+  }
+}
+
 /* Load product data from JSON file */
 async function loadProducts() {
   const response = await fetch("products.json");
   const data = await response.json();
-  return data.products;
+  allProducts = data.products;
+  updateProductGrid();
+  return allProducts;
 }
 
 /* Create HTML for displaying product cards */
@@ -227,6 +271,9 @@ categoryFilter.addEventListener("change", async (e) => {
 
   displayProducts(filteredProducts);
 });
+
+const productSearch = document.getElementById("productSearch");
+productSearch.addEventListener("input", updateProductGrid);
 
 // Get reference to the "Generate Routine" button
 const generateRoutineBtn = document.getElementById("generateRoutine");
@@ -461,9 +508,16 @@ chatForm.addEventListener("submit", async (e) => {
   document.getElementById("userInput").value = "";
 });
 
-// On page load, restore selected products from localStorage
-loadSelectedProductsFromStorage();
-updateSelectedProductsList();
+// Show More Products button logic
+const showMoreBtn = document.getElementById("showMoreBtn");
+if (showMoreBtn) {
+  showMoreBtn.addEventListener("click", function () {
+    productsToShow += INITIAL_PRODUCT_COUNT;
+    updateProductGrid();
+  });
+}
 
-// Show selected products on page load
+// On page load, restore selected products and load all products
+loadSelectedProductsFromStorage();
+loadProducts();
 updateSelectedProductsList();

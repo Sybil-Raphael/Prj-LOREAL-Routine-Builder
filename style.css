@@ -188,6 +188,10 @@ body {
   min-height: 160px;
 }
 
+.product-card.hidden {
+  display: none !important;
+}
+
 .product-card img {
   width: 110px;
   height: 110px;
@@ -411,4 +415,20 @@ body {
 #clearSelectedBtn:hover,
 #clearSelectedBtn:focus {
   background: #900;
+}
+
+#showMoreBtn {
+  margin: 20px auto;
+  padding: 10px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#showMoreBtn:hover,
+#showMoreBtn:focus {
+  background: #f0f0f0;
 }
