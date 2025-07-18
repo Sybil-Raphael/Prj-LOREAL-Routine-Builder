@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -104,15 +104,58 @@
 
       <!------- Footer Links ------->
       <footer class="site-footer">
-        <p>&copy; 2025 L'Oréal. All rights reserved.</p>
+        <p>&copy; 2025 L'Oréal Paris. All rights reserved.</p>
         <nav>
-          <!-- These URLs are placeholders -->
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Use</a>
-          <a href="#">Contact</a>
+          <a
+            href="https://www.lorealparisusa.com/privacy-policy"
+            target="_blank"
+            rel="noopener"
+            >Privacy Policy</a
+          >
+          <a
+            href="https://www.lorealparisusa.com/terms-of-use"
+            target="_blank"
+            rel="noopener"
+            >Terms of Use</a
+          >
+          <a
+            href="https://www.lorealparisusa.com/contact-us"
+            target="_blank"
+            rel="noopener"
+            >Contact Us</a
+          >
         </nav>
       </footer>
     </div>
+
+    <!-- 
+    Simple script to detect language changes and adjust page direction.
+    This helps if the page is translated (for example, using Google Translate).
+  -->
+  <script>
+    // List of languages that use right-to-left direction
+    var rtlLanguages = ['ar', 'he', 'fa', 'ur'];
+
+    // Function to set the direction based on the current language
+    function updateDirection() {
+      // Get the <html> element
+      var html = document.documentElement;
+      // Get the current language code (first 2 letters)
+      var lang = html.lang ? html.lang.substring(0,2).toLowerCase() : 'en';
+      // If the language is in the RTL list, set dir="rtl", else set dir="ltr"
+      if (rtlLanguages.indexOf(lang) !== -1) {
+        html.setAttribute('dir', 'rtl');
+      } else {
+        html.setAttribute('dir', 'ltr');
+      }
+    }
+
+    // Run the function when the page loads
+    updateDirection();
+
+    // Also check for changes every second (in case of translation)
+    setInterval(updateDirection, 1000);
+  </script>
 
     <!-- secrets.js can be removed when using Cloudflare Workers for API requests -->
     <script src="secrets.js"></script>

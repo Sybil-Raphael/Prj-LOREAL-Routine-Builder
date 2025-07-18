@@ -395,11 +395,11 @@ generateRoutineBtn.addEventListener("click", async function () {
       body: JSON.stringify({
         model: "gpt-4o-search-preview", // web search enabled
         messages: conversationHistory,
-        max_tokens: 500,
+        max_tokens: 2000, // increased from 650 to 2000 for longer responses
         temperature: 0.5,
         frequency_penalty: 0.8,
         tools: [{ type: "web_search" }],
-        tool_choice: "auto", // this lets OpenAI decide when to use web search
+        tool_choice: "auto",
       }),
     });
 
@@ -417,22 +417,93 @@ generateRoutineBtn.addEventListener("click", async function () {
       const formattedRoutine = formatRoutineText(
         data.choices[0].message.content
       );
-      chatWindow.innerHTML = formattedRoutine;
-
       // Add the AI's routine to the conversation history
       conversationHistory.push({
         role: "assistant",
         content: data.choices[0].message.content,
       });
+      renderChatHistory();
     } else {
       chatWindow.innerHTML =
         "<div style='color:#d00;'>Sorry, something went wrong. Please try again.</div>";
     }
   } catch (error) {
-    // Show error message if the request fails
     chatWindow.innerHTML = `<div style='color:#d00;'>Error: ${error.message}</div>`;
   }
 });
+
+function formatAssistantResponse(text) {
+  // Convert markdown links to HTML
+  text = convertMarkdownLinks(text);
+
+  // Inline markdown formatting (headings, bold, italic, line breaks)
+  text = text
+    .replace(/^###\s*(.+)$/gm, "<h3 style='margin:10px 0 5px;'>$1</h3>") // ### Heading
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>") // Bold
+    .replace(/_(.+?)_/g, "<em>$1</em>") // Italic
+    .replace(/\n/g, "<br>"); // Line breaks
+
+  // Split into paragraphs by double newlines
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  return paragraphs
+    .map((paragraph) => {
+      // Skip list formatting if it's a heading or already wrapped
+      if (paragraph.startsWith("<h3")) {
+        return paragraph;
+      }
+
+      // Check for list-like patterns
+      if (/^([-•]|\d+[\).]|Step\s*\d+)/m.test(paragraph)) {
+        const lines = paragraph
+          .split("<br>")
+          .map((l) => l.trim())
+          .filter(Boolean);
+
+        return `<ul style="padding-left:20px; margin:8px 0;">
+          ${lines
+            .filter((line) => /^([-•]|\d+[\).]|Step\s*\d+)/.test(line))
+            .map(
+              (line) =>
+                `<li>${line.replace(/^([-•]|\d+[\).]|Step\s*\d+)\s*/, "")}</li>`
+            )
+            .join("")}
+        </ul>`;
+      } else {
+        return `<div style="margin:8px 0;">${paragraph}</div>`;
+      }
+    })
+    .join("");
+}
+
+// Helper: Render chat history as bubbles
+function renderChatHistory() {
+  chatWindow.innerHTML = conversationHistory
+    .filter((msg, idx, arr) => {
+      // Only show user messages if they are follow-up questions (not the initial routine generation)
+      if (msg.role !== "user") return true;
+      // The first user message after page load is for generating the routine, so skip it
+      // Show user messages only if they are not immediately before an assistant message containing "personalized routine"
+      // We'll show user messages only after the first assistant response
+      // Find the index of the first assistant message
+      const firstAssistantIdx = arr.findIndex((m) => m.role === "assistant");
+      return idx >= firstAssistantIdx;
+    })
+    .map((msg) => {
+      if (msg.role === "user") {
+        return `<div class="chat-bubble user"><strong>You:</strong> ${msg.content}</div>`;
+      } else {
+        // Use AI-like formatting for assistant
+        return `<div class="chat-bubble assistant"><strong>Routine Assistant:</strong> ${formatAssistantResponse(
+          msg.content
+        )}</div>`;
+      }
+    })
+    .join("");
+}
 
 // Chat form submission handler - sends follow-up questions to OpenAI
 chatForm.addEventListener("submit", async (e) => {
@@ -461,7 +532,7 @@ chatForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({
         model: "gpt-4o-search-preview", // web search enabled
         messages: conversationHistory,
-        max_tokens: 500,
+        max_tokens: 2000, // increased for longer follow-up responses
         temperature: 0.5,
         frequency_penalty: 0.8,
       }),
@@ -481,21 +552,7 @@ chatForm.addEventListener("submit", async (e) => {
         role: "assistant",
         content: data.choices[0].message.content,
       });
-
-      // Display the full conversation in the chat window
-      chatWindow.innerHTML = conversationHistory
-        .filter((msg) => msg.role !== "system")
-        .map((msg) => {
-          if (msg.role === "user") {
-            return `<div style="margin:10px 0; color:#222;"><strong>You:</strong> ${msg.content}</div>`;
-          } else {
-            // Format assistant's response for clarity
-            return `<div style="margin:10px 0; color:#222;"><strong>Routine Assistant:</strong> ${formatRoutineText(
-              msg.content
-            )}</div>`;
-          }
-        })
-        .join("");
+      renderChatHistory();
     } else {
       chatWindow.innerHTML +=
         "<div style='color:#d00;'>Sorry, something went wrong. Please try again.</div>";
@@ -520,4 +577,5 @@ if (showMoreBtn) {
 // On page load, restore selected products and load all products
 loadSelectedProductsFromStorage();
 loadProducts();
+updateSelectedProductsList();
 updateSelectedProductsList();
